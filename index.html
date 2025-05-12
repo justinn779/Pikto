@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極簡畫家</title>
+    <style>
+        canvas {
+            cursor: crosshair;
+            border: 1px solid black;
+            height: 100%;
+            width: 100%;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+        .shape {
+            border-radius: 15px;
+            justify-content: center;
+            flex-grow: 1;
+        }
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .action {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="actions">
+    <h2>極簡畫家</h2>
+    <button class="action" onclick="clearCanvas()">清除畫布</button>
+    <button class="action" onclick="saveCanvasAsImage()">送出</button>
+</div>
+
+<canvas id="drawingCanvas" style="border: 1px solid black"></canvas>
+
+<div class="buttons">
+    <button id="lineButton" class="shape" onclick="setShape('line')">直線</button>
+    <button id="circleButton" class="shape" onclick="setShape('circle')">圓圈</button>
+</div>
+
+<script>
+    let isDrawing = false;
+    let shape = 'line';
+    let startX = 0;
+    let startY = 0;
+    let lastX = 0;
+    let lastY = 0;
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'black';
+    ctx.fillStyle = 'black';
+    lineButton.style.backgroundColor = '#4CAF50';
+
+    const shapes = [];
+
+    function setShape(newShape) {
+        shape = newShape;
+        const circleButton = document.getElementById('circleButton');
+        const lineButton = document.getElementById('lineButton');
+        if (shape === 'circle') {
+            circleButton.style.backgroundColor = '#4CAF50';
+            lineButton.style.backgroundColor = '';
+        } else {
+            lineButton.style.backgroundColor = '#4CAF50';
+            circleButton.style.backgroundColor = '';
+        }
+    }
+
+    function getEventCoordinates(event) {
+        const rect = canvas.getBoundingClientRect();
+        if (event.touches && event.touches.length > 0) {
+            return {
+                x: event.touches[0].clientX - rect.left,
+                y: event.touches[0].clientY - rect.top
+            };
+        } else if (event.changedTouches && event.changedTouches.length > 0) {
+            return {
+                x: event.changedTouches[0].clientX - rect.left,
+                y: event.changedTouches[0].clientY - rect.top
+            };
+        } else {
+            return {
+                x: event.offsetX ?? event.clientX - rect.left,
+                y: event.offsetY ?? event.clientY - rect.top
+            };
+        }
+    }
+
+    function startDrawing(event) {
+        event.preventDefault();
+        const { x, y } = getEventCoordinates(event);
+        startX = x;
+        startY = y;
+        lastX = x;
+        lastY = y;
+        isDrawing = true;
+    }
+
+    function draw(event) {
+        if (!isDrawing) return;
+        event.preventDefault();
+        const { x, y } = getEventCoordinates(event);
+
+        drawShapes();
+        if (shape === 'line') {
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        } else if (shape === 'circle') {
+            const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2)) / 2;
+            ctx.beginPath();
+            ctx.arc((x + startX) / 2, (y + startY) / 2, radius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        lastX = x;
+        lastY = y;
+        displayShapeCount();
+    }
+
+    function stopDrawing(event) {
+        if (!isDrawing) return;
+        event.preventDefault();
+        const { x, y } = getEventCoordinates(event);
+
+        if (shape === 'line') {
+            shapes.push({ shape: 'line', startX, startY, endX: x, endY: y });
+        } else if (shape === 'circle') {
+            const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2)) / 2;
+            shapes.push({ shape: 'circle', startX: (x + startX) / 2, startY: (y + startY) / 2, radius });
+        }
+
+        drawShapes();
+        displayShapeCount();
+        isDrawing = false;
+    }
+
+    function displayShapeCount() {
+        ctx.font = '20px Arial';
+        ctx.fillStyle = 'black';
+        ctx.fillText(' lines: ' + shapes.length, canvas.width - 90, 25);
+    }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing, { passive: false });
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        shapes.length = 0;
+    }
+
+    function drawShapes() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const shapeData of shapes) {
+            if (shapeData.shape === 'line') {
+                ctx.beginPath();
+                ctx.moveTo(shapeData.startX, shapeData.startY);
+                ctx.lineTo(shapeData.endX, shapeData.endY);
+                ctx.stroke();
+            } else if (shapeData.shape === 'circle') {
+                ctx.beginPath();
+                ctx.arc(shapeData.startX, shapeData.startY, shapeData.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+    }
+
+    function saveCanvasAsImage() {
+        const imageUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = 'canvas-image.png';
+        link.click();
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth * 0.95;
+        canvas.height = window.innerHeight * 0.7;
+        drawShapes();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+</script>
+</body>
+</html>
