@@ -48,8 +48,9 @@
 
 <div class="actions">
     <h2>極簡畫家</h2>
+    <button class="action" onclick="undoLast()">上一步</button>
     <button class="action" onclick="clearCanvas()">清除畫布</button>
-    <button class="action" onclick="saveCanvasAsImage()">送出</button>
+    <button class="action" onclick="saveCanvasAsImage()">儲存</button>
 </div>
 
 <canvas id="drawingCanvas" style="border: 1px solid black"></canvas>
@@ -176,6 +177,12 @@
     function clearCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         shapes.length = 0;
+    }
+
+    function undoLast() {
+        shapes.pop(); // 移除最後一筆圖形
+        drawShapes(); // 重新繪製剩下的圖形
+        displayShapeCount(); // 更新數量顯示
     }
 
     function drawShapes() {
