@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>極簡畫家1.1</title>
     <style>
+        html {
+            touch-action: manipulation;
+        }
         canvas {
             cursor: crosshair;
             border: 1px solid black;
@@ -218,6 +221,10 @@
 
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
+
+    document.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+    }, { passive: false });
 </script>
 </body>
 </html>
